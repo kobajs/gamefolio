@@ -21,13 +21,13 @@ export class World {
     this.renderer = createRenderer();
     this.scene = createScene();
     this.loop = new Loop(this.camera, this.scene, this.renderer);
-    // this.player = new Player(this.scene);
+    this.player = new Player(this.scene);
     container.append(this.renderer.domElement);
 
-    const cube = createCube();
     const light = createLights();
-
-    this.scene.add(cube, light);
+    this.scene.add(light);
+    const cube = createCube();
+    this.scene.add(cube);
 
     const resizer = new Resizer(this.camera, container, this.renderer);
   }
