@@ -1,29 +1,74 @@
-import { AnimationMixer, Clock, Group, Scene } from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import {
+  AnimationClip,
+  AnimationMixer,
+  PerspectiveCamera,
+  Vector2,
+  Vector3,
+} from "three";
+import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { clock } from "../systems/Loop";
 
-const loader = new GLTFLoader();
+import { Model } from "../systems/ResourcesManager";
+import { UpdatableObject3D } from "../systems/UpdatableObject3D";
+
+const kForward = new Vector3(0, 0, 1);
 
 export class Player {
-  private object: Group;
+  private camera: PerspectiveCamera;
+  private object = new UpdatableObject3D();
+  private animations: AnimationClip[];
+  private mixer: AnimationMixer;
 
-  constructor(scene: Scene) {
-    loader.load("/resources/character/scene.gltf", function (gltf) {
-      console.log(gltf.animations);
-      scene.add(gltf.scene);
-      this.object = gltf.scene;
+  constructor(camera: PerspectiveCamera, model: Model) {
+    const clonedScene = SkeletonUtils.clone(model.gltf.scene);
+    this.camera = camera;
+    this.object.add(clonedScene);
+    this.object.tick = this.tick.bind(this);
+    // this.object.rotateY(3.15);
+    this.animations = model.gltf.animations;
+
+    this.mixer = new AnimationMixer(this.object);
+
+    this.setupMovement();
+    this.setupCamera();
+    this.animateRun();
+  }
+
+  getObject() {
+    return this.object;
+  }
+
+  animateRun() {
+    const action = this.mixer.clipAction(this.animations[0]);
+    action.play();
+  }
+
+  stopAnimations() {
+    this.mixer.stopAllAction();
+  }
+
+  setupCamera() {
+    this.camera.lookAt(this.object.position);
+  }
+
+  setupMovement() {
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "w") {
+        this.object.translateOnAxis(kForward, 100);
+      }
+      if (e.key === "s") {
+        this.object.translateOnAxis(kForward, -100);
+      }
+      if (e.key === "a") {
+        this.object.rotateY(0.5);
+      }
+      if (e.key === "d") {
+        this.object.rotateY(-0.5);
+      }
     });
   }
 
-  animate() {
-    const mixer = new AnimationMixer(this.object);
-    const clips = this.object.animations;
-    const action = mixer.clipAction(clips[0]);
-    console.log(action);
-    const mixerUpdateDelta = new Clock().getDelta();
-
-    // Update the animation mixer, the stats panel, and render this frame
-
-    mixer.update(mixerUpdateDelta);
-    action.play();
+  tick(delta: number) {
+    this.mixer.update(delta);
   }
 }

@@ -4,10 +4,10 @@ import { createCube } from "./components/cube";
 import { createLights } from "./components/light";
 import { Player } from "./components/player";
 import { createScene } from "./components/scene";
+import ResourcesManager from "./systems/ResourcesManager";
 import { Loop } from "./systems/Loop";
 
 import { createRenderer } from "./systems/renderer";
-import { Resizer } from "./systems/Resizer";
 
 export class World {
   private camera: PerspectiveCamera;
@@ -16,24 +16,21 @@ export class World {
   private player: Player;
   private loop: Loop;
 
-  constructor(container: HTMLDivElement) {
-    this.camera = createCamera();
+  constructor(container: HTMLDivElement, resources: ResourcesManager) {
     this.renderer = createRenderer();
-    this.scene = createScene();
-    this.loop = new Loop(this.camera, this.scene, this.renderer);
-    this.player = new Player(this.scene);
     container.append(this.renderer.domElement);
+
+    this.camera = createCamera();
+    this.scene = createScene();
+    this.loop = new Loop(this.renderer, container);
+    this.loop.setScenario(this.scene, this.camera);
+    this.player = new Player(this.camera, resources.models.character);
+    this.scene.add(this.player.getObject());
 
     const light = createLights();
     this.scene.add(light);
     const cube = createCube();
     this.scene.add(cube);
-
-    const resizer = new Resizer(this.camera, container, this.renderer);
-  }
-
-  render() {
-    this.renderer.render(this.scene, this.camera);
   }
 
   start() {
